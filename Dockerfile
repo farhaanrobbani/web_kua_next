@@ -23,7 +23,7 @@ ENV NODE_ENV=production \
     HOSTNAME=0.0.0.0 \
     TZ=Asia/Jakarta \
     CHROMIUM_PATH=/usr/bin/chromium-browser
-RUN apk add --no-cache chromium fontconfig ttf-liberation openssl \
+RUN apk add --no-cache chromium fontconfig ttf-liberation ttf-dejavu openssl \
  && npm install -g prisma@6.19.3
 
 COPY --from=builder /app/.next/standalone ./

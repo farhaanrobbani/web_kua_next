@@ -51,3 +51,36 @@ export function excerpt(
   const plain = content.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
   return plain.length <= limit ? plain : `${plain.slice(0, limit)}...`;
 }
+
+export function datetimeId(
+  value: Date | string,
+  timeZone: string = JAKARTA,
+): string {
+  return new Intl.DateTimeFormat("id-ID", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+    timeZone,
+  }).format(toDate(value));
+}
+
+export function datetimeNumericId(
+  value: Date | string,
+  timeZone: string = JAKARTA,
+): string {
+  const parts = new Intl.DateTimeFormat("id-ID", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+    timeZone,
+  }).formatToParts(toDate(value));
+  const get = (type: Intl.DateTimeFormatPartTypes) =>
+    parts.find((part) => part.type === type)?.value ?? "";
+  return `${get("day")}/${get("month")}/${get("year")} ${get("hour")}:${get("minute")}`;
+}
