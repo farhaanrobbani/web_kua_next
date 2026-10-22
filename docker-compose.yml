@@ -1,0 +1,65 @@
+name: kuadigital-next
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: kuadigital
+      POSTGRES_USER: kuadigital
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD belum diisi di .env}
+      TZ: Asia/Jakarta
+      PGTZ: Asia/Jakarta
+    ports:
+      - "127.0.0.1:5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U kuadigital -d kuadigital"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    mem_limit: 384m
+
+  app:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://kuadigital:${POSTGRES_PASSWORD}@db:5432/kuadigital?schema=public
+      AUTH_SECRET: ${AUTH_SECRET:?AUTH_SECRET belum diisi di .env}
+      AUTH_URL: ${AUTH_URL:-http://localhost:7100}
+      AUTH_TRUST_HOST: "true"
+      TZ: Asia/Jakarta
+      UPLOAD_DIR: /app/storage/uploads
+      CHROMIUM_PATH: /usr/bin/chromium-browser
+    ports:
+      - "7100:3000"
+    volumes:
+      - ./storage/uploads:/app/storage/uploads
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    mem_limit: 900m
+
+  adminer:
+    image: adminer:latest
+    restart: unless-stopped
+    profiles: ["tools"]
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      ADMINER_DEFAULT_SERVER: db
+      ADMINER_DESIGN: dracula
+    ports:
+      - "7101:8080"
+    mem_limit: 128m
+
+volumes:
+  pgdata:

@@ -1,0 +1,340 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model announcements {
+  id           Int                 @id @default(autoincrement())
+  title        String                 @db.VarChar(200)
+  content      String                 @db.Text
+  slug         String?                @unique(map: "announcements_slug_unique") @db.VarChar(220)
+  category     announcements_category @default(announcement)
+  excerpt      String?                @db.Text
+  author_id    Int?               
+  image        String?                @db.VarChar(255)
+  published_at DateTime?              @db.Timestamptz(0)
+  active       Boolean                @default(true)
+  created_at   DateTime?              @db.Timestamptz(0)
+  updated_at   DateTime?              @db.Timestamptz(0)
+  users        users?                 @relation(fields: [author_id], references: [id], onUpdate: Restrict)
+
+  @@index([author_id], map: "announcements_author_id_foreign")
+}
+
+model download_items {
+  id           Int    @id @default(autoincrement())
+  title        String    @db.VarChar(200)
+  description  String?   @db.Text
+  category     String?   @db.VarChar(100)
+  file         String?   @db.VarChar(255)
+  external_url String?   @db.VarChar(500)
+  active       Boolean   @default(true)
+  sort_order   Int       @default(0)
+  created_at   DateTime? @db.Timestamptz(0)
+  updated_at   DateTime? @db.Timestamptz(0)
+}
+
+model kritik_sarans {
+  id         Int    @id @default(autoincrement())
+  nama       String    @db.VarChar(150)
+  kontak     String?   @db.VarChar(150)
+  kategori   String?   @db.VarChar(50)
+  isi        String    @db.Text
+  created_at DateTime? @db.Timestamptz(0)
+  updated_at DateTime? @db.Timestamptz(0)
+}
+
+model kua_activity_themes {
+  id         Int    @id @default(autoincrement())
+  key        String    @unique(map: "kua_activity_themes_key_unique") @db.VarChar(100)
+  label      String    @db.VarChar(255)
+  active     Boolean   @default(true)
+  sort_order Int       @default(0)
+  created_at DateTime? @db.Timestamptz(0)
+  updated_at DateTime? @db.Timestamptz(0)
+}
+
+model kua_daily_data {
+  id         Int    @id @default(autoincrement())
+  tanggal    DateTime  @unique(map: "kua_daily_data_tanggal_unique") @db.Date
+  data       String?   @db.Text
+  created_by Int?  
+  created_at DateTime? @db.Timestamptz(0)
+  updated_at DateTime? @db.Timestamptz(0)
+  users      users?    @relation(fields: [created_by], references: [id], onUpdate: Restrict)
+
+  @@index([created_by], map: "kua_daily_data_created_by_foreign")
+}
+
+model kua_settings {
+  id         Int    @id @default(autoincrement())
+  key        String    @unique(map: "kua_settings_key_unique") @db.VarChar(100)
+  value      String?   @db.Text
+  created_at DateTime? @db.Timestamptz(0)
+  updated_at DateTime? @db.Timestamptz(0)
+}
+
+model letter_templates {
+  id             Int       @id @default(autoincrement())
+  letter_type_id Int      
+  name           String       @db.VarChar(150)
+  body           String       @db.Text
+  active         Boolean      @default(true)
+  created_at     DateTime?    @db.Timestamptz(0)
+  updated_at     DateTime?    @db.Timestamptz(0)
+  letter_types   letter_types @relation(fields: [letter_type_id], references: [id], onDelete: Cascade, onUpdate: Restrict)
+
+  @@index([letter_type_id], map: "letter_templates_letter_type_id_foreign")
+}
+
+model letter_types {
+  id                   Int             @id @default(autoincrement())
+  code                 String             @unique(map: "letter_types_code_unique") @db.VarChar(50)
+  name                 String             @db.VarChar(150)
+  permohonan_judul     String?            @db.VarChar(200)
+  description          String?            @db.Text
+  permohonan_body      String?            @db.Text
+  permohonan_informasi String?            @db.Text
+  permohonan_fields    String?            @db.Text
+  fields               String?            @db.Text
+  active               Boolean            @default(true)
+  publik               Boolean            @default(false)
+  kop_footer           String?            @db.Text
+  kop_footer_enabled   Boolean            @default(false)
+  kop_enabled          Boolean            @default(true)
+  created_at           DateTime?          @db.Timestamptz(0)
+  updated_at           DateTime?          @db.Timestamptz(0)
+  letter_templates     letter_templates[]
+  letters              letters[]
+  submissions          submissions[]
+}
+
+model letters {
+  id                               Int       @id @default(autoincrement())
+  letter_type_id                   Int      
+  nomor                            String?      @db.VarChar(100)
+  tanggal_surat                    DateTime?    @db.Date
+  perihal                          String       @db.VarChar(255)
+  header_html                      String?      @db.Text
+  tampilkan_tanggal                Boolean      @default(true)
+  tampilkan_tanggal_ttd            Boolean      @default(true)
+  data                             String       @db.Text
+  status                           String       @default("draft") @db.VarChar(20)
+  created_by                       Int?     
+  approved_by                      Int?     
+  approved_at                      DateTime?    @db.Timestamptz(0)
+  keterangan                       String?      @db.Text
+  created_at                       DateTime?    @db.Timestamptz(0)
+  updated_at                       DateTime?    @db.Timestamptz(0)
+  users_letters_approved_byTousers users?       @relation("letters_approved_byTousers", fields: [approved_by], references: [id], onUpdate: Restrict)
+  users_letters_created_byTousers  users?       @relation("letters_created_byTousers", fields: [created_by], references: [id], onUpdate: Restrict)
+  letter_types                     letter_types @relation(fields: [letter_type_id], references: [id], onDelete: Cascade, onUpdate: Restrict)
+
+  @@index([approved_by], map: "letters_approved_by_foreign")
+  @@index([created_by], map: "letters_created_by_foreign")
+  @@index([letter_type_id], map: "letters_letter_type_id_foreign")
+}
+
+model marriage_announcements {
+  id             Int    @id @default(autoincrement())
+  no_pendaftaran String?   @db.VarChar(80)
+  nama_pria      String    @db.VarChar(150)
+  bin_pria       String?   @db.VarChar(120)
+  alamat_pria    String?   @db.VarChar(255)
+  nama_wanita    String    @db.VarChar(150)
+  binti_wanita   String?   @db.VarChar(120)
+  alamat_wanita  String?   @db.VarChar(255)
+  tanggal_akad   DateTime  @db.Date
+  tempat_nikah   String?   @db.VarChar(255)
+  status_wali    String?   @db.VarChar(150)
+  active         Boolean   @default(true)
+  created_at     DateTime? @db.Timestamptz(0)
+  updated_at     DateTime? @db.Timestamptz(0)
+}
+
+model marriage_services {
+  id                Int    @id @default(autoincrement())
+  name              String    @db.VarChar(150)
+  slug              String    @unique(map: "marriage_services_slug_unique") @db.VarChar(150)
+  description       String?   @db.Text
+  persyaratan       String?   @db.Text
+  alur              String?   @db.Text
+  sop               String?   @db.Text
+  persyaratan_label String?   @db.VarChar(50)
+  alur_label        String?   @db.VarChar(50)
+  sop_label         String?   @db.VarChar(50)
+  icon              String?   @db.VarChar(50)
+  sort_order        Int       @default(0)
+  active            Boolean   @default(true)
+  created_at        DateTime? @db.Timestamptz(0)
+  updated_at        DateTime? @db.Timestamptz(0)
+}
+
+model navbar_items {
+  id                 Int         @id @default(autoincrement())
+  key                String         @unique(map: "navbar_items_key_unique") @db.VarChar(50)
+  parent_id          Int?       
+  label              String         @db.VarChar(100)
+  url                String?        @db.VarChar(255)
+  embed_url          String?        @db.VarChar(255)
+  icon               String?        @db.VarChar(50)
+  sort_order         Int            @default(0)
+  active             Boolean        @default(true)
+  has_submenu        Boolean        @default(false)
+  created_at         DateTime?      @db.Timestamptz(0)
+  updated_at         DateTime?      @db.Timestamptz(0)
+  navbar_items       navbar_items?  @relation("navbar_itemsTonavbar_items", fields: [parent_id], references: [id], onDelete: Cascade, onUpdate: Restrict)
+  other_navbar_items navbar_items[] @relation("navbar_itemsTonavbar_items")
+
+  @@index([parent_id], map: "navbar_items_parent_id_foreign")
+}
+
+model pages {
+  id          Int    @id @default(autoincrement())
+  key         String    @unique(map: "pages_key_unique") @db.VarChar(255)
+  title       String    @db.VarChar(255)
+  description String?   @db.Text
+  embed_url   String?   @db.VarChar(255)
+  active      Boolean   @default(true)
+  created_at  DateTime? @db.Timestamptz(0)
+  updated_at  DateTime? @db.Timestamptz(0)
+}
+
+model religious_services {
+  id                Int    @id @default(autoincrement())
+  name              String    @db.VarChar(150)
+  slug              String    @unique(map: "religious_services_slug_unique") @db.VarChar(150)
+  description       String?   @db.Text
+  persyaratan       String?   @db.Text
+  alur              String?   @db.Text
+  sop               String?   @db.Text
+  persyaratan_label String?   @db.VarChar(50)
+  alur_label        String?   @db.VarChar(50)
+  sop_label         String?   @db.VarChar(50)
+  icon              String?   @db.VarChar(50)
+  sort_order        Int       @default(0)
+  active            Boolean   @default(true)
+  created_at        DateTime? @db.Timestamptz(0)
+  updated_at        DateTime? @db.Timestamptz(0)
+}
+
+model staff {
+  id               Int    @id @default(autoincrement())
+  nama             String    @db.VarChar(150)
+  nip              String?   @db.VarChar(50)
+  kontak           String?   @db.VarChar(100)
+  jabatan          String    @db.VarChar(150)
+  pangkat_golongan String?   @db.VarChar(100)
+  bagian           String?   @db.VarChar(150)
+  foto             String?   @db.VarChar(255)
+  sort_order       Int       @default(0)
+  active           Boolean   @default(true)
+  created_at       DateTime? @db.Timestamptz(0)
+  updated_at       DateTime? @db.Timestamptz(0)
+}
+
+model staff_activities {
+  id                Int    @id @default(autoincrement())
+  user_id           Int   
+  tanggal           DateTime  @db.Date
+  kegiatan          String    @db.Text
+  pekerjaan         String    @db.Text
+  activity_type_key String?   @db.VarChar(100)
+  total_jumlah      Int       @default(1)
+  created_at        DateTime? @db.Timestamptz(0)
+  updated_at        DateTime? @db.Timestamptz(0)
+  users             users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: Restrict)
+
+  @@index([activity_type_key], map: "staff_activities_activity_type_key_index")
+  @@index([user_id, tanggal], map: "staff_activities_user_id_tanggal_index")
+}
+
+model submissions {
+  id             Int       @id @default(autoincrement())
+  letter_type_id Int      
+  nama_pemohon   String       @db.VarChar(150)
+  kontak         String?      @db.VarChar(100)
+  data           String?      @db.Text
+  status         String       @default("baru") @db.VarChar(20)
+  token          String?      @unique(map: "submissions_token_unique") @db.VarChar(64)
+  catatan        String?      @db.Text
+  created_at     DateTime?    @db.Timestamptz(0)
+  updated_at     DateTime?    @db.Timestamptz(0)
+  letter_types   letter_types @relation(fields: [letter_type_id], references: [id], onDelete: Cascade, onUpdate: Restrict)
+
+  @@index([letter_type_id], map: "submissions_letter_type_id_foreign")
+}
+
+model user_activity_templates {
+  id                Int    @id @default(autoincrement())
+  user_id           Int   
+  activity_type_key String    @db.VarChar(100)
+  kegiatan          String    @db.Text
+  pekerjaan         String    @db.Text
+  created_at        DateTime? @db.Timestamptz(0)
+  updated_at        DateTime? @db.Timestamptz(0)
+  users             users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: Restrict)
+
+  @@unique([user_id, activity_type_key], map: "user_activity_templates_user_id_activity_type_key_unique")
+}
+
+model users {
+  id                                 Int                    @id @default(autoincrement())
+  name                               String                    @db.VarChar(255)
+  email                              String                    @unique(map: "users_email_unique") @db.VarChar(255)
+  nip                                String?                   @db.VarChar(50)
+  jabatan                            String?                   @db.VarChar(255)
+  level_jabatan                      String?                   @db.VarChar(255)
+  pangkat                            String?                   @db.VarChar(255)
+  ruang_golongan                     String?                   @db.VarChar(50)
+  grade_tukin                        Int                       @default(8)
+  jumlah_tukin_kotor                 Decimal                   @default(0.00) @db.Decimal(15, 2)
+  jumlah_tukin_bersih                Decimal                   @default(0.00) @db.Decimal(15, 2)
+  gapok                              Decimal                   @default(0.00) @db.Decimal(15, 2)
+  jumlah_uang_makan_harian           Decimal                   @default(35150.00) @db.Decimal(15, 2)
+  foto_profil_url                    String?                   @db.VarChar(255)
+  ttd_url                            String?                   @db.VarChar(255)
+  instansi                           String                    @default("KUA Ampelgading") @db.VarChar(255)
+  role                               String                    @default("staff") @db.VarChar(255)
+  is_active                          Boolean                   @default(true)
+  email_verified_at                  DateTime?                 @db.Timestamptz(0)
+  password                           String                    @db.VarChar(255)
+  remember_token                     String?                   @db.VarChar(100)
+  created_at                         DateTime?                 @db.Timestamptz(0)
+  updated_at                         DateTime?                 @db.Timestamptz(0)
+  announcements                      announcements[]
+  kua_daily_data                     kua_daily_data[]
+  letters_letters_approved_byTousers letters[]                 @relation("letters_approved_byTousers")
+  letters_letters_created_byTousers  letters[]                 @relation("letters_created_byTousers")
+  staff_activities                   staff_activities[]
+  user_activity_templates            user_activity_templates[]
+}
+
+model wakaf_services {
+  id                Int    @id @default(autoincrement())
+  name              String    @db.VarChar(150)
+  slug              String    @unique(map: "wakaf_services_slug_unique") @db.VarChar(150)
+  description       String?   @db.Text
+  persyaratan       String?   @db.Text
+  alur              String?   @db.Text
+  sop               String?   @db.Text
+  persyaratan_label String?   @db.VarChar(50)
+  alur_label        String?   @db.VarChar(50)
+  sop_label         String?   @db.VarChar(50)
+  icon              String?   @db.VarChar(50)
+  sort_order        Int       @default(0)
+  active            Boolean   @default(true)
+  created_at        DateTime? @db.Timestamptz(0)
+  updated_at        DateTime? @db.Timestamptz(0)
+}
+
+enum announcements_category {
+  news
+  article
+  announcement
+}
