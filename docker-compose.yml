@@ -30,7 +30,6 @@ services:
     environment:
       DATABASE_URL: postgresql://kuadigital:${POSTGRES_PASSWORD}@db:5432/kuadigital?schema=public
       AUTH_SECRET: ${AUTH_SECRET:?AUTH_SECRET belum diisi di .env}
-      AUTH_URL: ${AUTH_URL:-http://localhost:7100}
       AUTH_TRUST_HOST: "true"
       TZ: Asia/Jakarta
       UPLOAD_DIR: /app/storage/uploads
